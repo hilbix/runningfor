@@ -22,6 +22,9 @@
  * 02110-1301 USA.
  *
  * $Log$
+ * Revision 1.2  2009-05-27 15:44:39  tino
+ * Unlinking and options added
+ *
  * Revision 1.1  2009-05-27 15:06:29  tino
  * first version
  *
@@ -30,6 +33,7 @@
 #include "tino/filetool.h"
 #include "tino/getopt.h"
 #include "tino/num.h"
+#include "tino/buf_printf.h"
 
 #include <time.h>
 
@@ -40,25 +44,44 @@ main(int argc, char **argv)
 {
   int			argn;
   const char		*tmpdir;
-  char			buf[30];
   const char		*file;
   tino_file_stat_t	st;
+  unsigned long long	seconds;
+  TINO_BUF		buf;
+  int			no_ppid, no_unlink;
 
-  argn	= tino_getopt(argc, argv, 1, 1,
+  argn	= tino_getopt(argc, argv, 1, 2,
 		      TINO_GETOPT_VERSION(RUNNINGFOR_VERSION)
-		      " seconds\n"
+		      " seconds [magic]\n"
+		      "\tReturns true for the given number of seconds.\n"
+		      "\tThe duration is up to 1 second longer due to time rounding.\n"
+		      "\tA reference file is created in a temporary directory\n"
+		      "\tto measure the time, which is removed on returning false.\n"
+		      "\tMagic is in cases when more than one loop is needed\n"
+		      "\tas the reference file is named after the parent PID.\n"
+		      "\t\n"
 		      "\tExample to output dots for 15 seconds without delay:\n"
-		      "\t# while runningfor 15; do echo -n .; done"
+		      "\twhile runningfor 15; do echo -n .; done"
 		      ,
 
 		      TINO_GETOPT_USAGE
 		      "h	this help"
 		      ,
 
+		      TINO_GETOPT_FLAG
+		      "k	Keep reference filename, possibly making it stale.\n"
+		      "		Stale reference files always give a false as return code."
+		      , &no_unlink,
+
+		      TINO_GETOPT_FLAG
+		      "n	do Not include parent pid in reference filename\n"
+		      "		If the magic is missing, too, the duration is used instead!"
+		      , &no_ppid,
+
 		      TINO_GETOPT_DEFAULT_ENV
 		      TINO_GETOPT_STRING
 		      TINO_GETOPT_DEFAULT
-		      "t dir	Give alternate tmp directory name"
+		      "t dir	Temporary directory for reference file creation"
 		      , "RUNNINGFOR_TMPDIR"
 		      , &tmpdir,
 		      "/tmp",
@@ -68,7 +91,20 @@ main(int argc, char **argv)
   if (argn<=0)
     return 2;
 
-  file	= tino_file_glue_pathOi(NULL, 0, tmpdir, tino_snprintf_ret(buf, sizeof buf, "runningfor-%ld.tmp", (long)getppid()));
+  seconds	= tino_num_secondsA(argv[argn]);
+
+  tino_buf_initO(&buf);
+  tino_buf_add_sO(&buf, "runningfor-");
+  if (!no_ppid)
+    tino_buf_add_sprintfO(&buf, "%ld", (long)getppid());
+  if (argn<argc)
+    tino_buf_add_sO(&buf, argv[argn+1]);
+  else if (!no_ppid)
+    tino_buf_add_sprintfO(&buf, "%Lu", seconds);
+  tino_buf_add_sO(&buf, ".tmp");
+
+  file		= tino_file_glue_pathOi(NULL, 0, tmpdir, tino_buf_get_sN(&buf));
+
   while (tino_file_lstatE(file, &st))
     {
       int	fd;
@@ -85,5 +121,9 @@ main(int argc, char **argv)
       TINO_ERR1("ETTRF104B %s reference file not empty", file);
       return 4;
     }
-  return time(NULL)-st.st_ctime>tino_num_secondsA(argv[argn]);
+  if ((time(NULL)-st.st_ctime)<=seconds)
+    return 0;
+  if (!no_unlink)
+    tino_file_unlinkO(file);
+  return 1;
 }
