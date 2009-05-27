@@ -11,6 +11,9 @@
 # COPYRIGHT.CLL can be found at http://permalink.de/tino/cll
 #
 # $Log$
+# Revision 1.2  2009-05-27 15:06:58  tino
+# install into /usr/local/bin
+#
 # Revision 1.1  2009-05-27 15:06:29  tino
 # first version
 #
@@ -44,7 +47,7 @@ ADD_LDFLAGS=
    TINOCOPY=
 #    TINOINC=tino_common.h
 #    TINOLIB=tino/lib.h
-#INSTALLPATH=/usr/local
+ INSTALLPATH=/usr/local
 # DBG_CFLAGS=
 #DBG_CCFLAGS=
 #DBG_LDFLAGS=
