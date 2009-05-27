@@ -22,6 +22,9 @@
  * 02110-1301 USA.
  *
  * $Log$
+ * Revision 1.3  2009-05-27 15:59:37  tino
+ * Now works as designed
+ *
  * Revision 1.2  2009-05-27 15:44:39  tino
  * Unlinking and options added
  *
@@ -97,9 +100,13 @@ main(int argc, char **argv)
   tino_buf_add_sO(&buf, "runningfor-");
   if (!no_ppid)
     tino_buf_add_sprintfO(&buf, "%ld", (long)getppid());
-  if (argn<argc)
-    tino_buf_add_sO(&buf, argv[argn+1]);
-  else if (!no_ppid)
+  if (++argn<argc)
+    {
+      if (!no_ppid)
+	tino_buf_add_cO(&buf, '-');
+      tino_buf_add_sO(&buf, argv[argn]);
+    }
+  else if (no_ppid)
     tino_buf_add_sprintfO(&buf, "%Lu", seconds);
   tino_buf_add_sO(&buf, ".tmp");
 
