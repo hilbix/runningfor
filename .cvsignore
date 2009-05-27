@@ -1,0 +1,6 @@
+Makefile
+Makefile.md5
+*.d
+?*.cvsignore*
+runningfor
+runningfor_version.h

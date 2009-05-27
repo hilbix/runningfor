@@ -1,0 +1,15 @@
+Return true until the given time periode is reached.
+# $Header$
+#
+# $Log$
+# Revision 1.1  2009-05-27 15:06:29  tino
+# first version
+#
+
+This is a shell helper program to run things for certain time.  The
+first invocation creates an empty reference file in /tmp, all future
+invocations then check the file inode change time and if the time is
+reached the file is removed and false is returned.
+
+Following command outputs dots for 15 seconds without delay:
+<pre>while runningfor 15; do echo -n .; done</pre>
